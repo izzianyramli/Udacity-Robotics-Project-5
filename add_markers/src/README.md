@@ -16,6 +16,7 @@ This repo contains several packages that is needed for mapping, localization and
 2. `slam_gmapping`: This package contains SLAM algorithm that is used to map the enviroment.
 
 You may need to pass the parameters or change the parameters based on your simulation environment in `slam_gmapping/gmapping/src/slam_gmapping.cpp`:
+
 ```cpp
   // Parameters used by our GMapping wrapper
   if(!private_nh_.getParam("throttle_scans", throttle_scans_))
