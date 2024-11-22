@@ -6,11 +6,17 @@ This repo contains several packages that is needed for mapping, localization and
 1. `my_robot`: This package includes several things needed for the overall application:
 
 -- `config/`: contains configuration files needed for localization and navigation.
+
 -- `launch/`: contains the launch scripts that will be called in the bash scripts.
+
 -- `maps/`: contains the map data to be used for navigation.
+
 -- `rvizConfig/`: contains the pre-configured RViz configuration for mapping and navigation.
+
 -- `worlds/`: contains the Gazebo simulation environment.
+
 -- `urdf/`: contains robot body and sensors defined.
+
 -- `meshes/`: contains data on for Robot's Hokuyo laser sensor.
 
 2. `slam_gmapping`: This package contains SLAM algorithm that is used to map the enviroment.
