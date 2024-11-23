@@ -249,7 +249,7 @@ Visualization Manager:
       Marker Topic: /visualization_marker
       Name: Marker
       Namespaces:
-        basic_shapes: true
+        cube: true
       Queue Size: 100
       Value: true
   Enabled: true
@@ -313,5 +313,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 803
-  X: 533
-  Y: 181
+  X: 2
+  Y: 315

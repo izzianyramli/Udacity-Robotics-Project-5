@@ -3,73 +3,79 @@
 #include <actionlib/client/simple_action_client.h>
 #include <std_msgs/Int8.h>
 
-int state;
-
-// Define a client for to send goal requests to the move_base server through a SimpleActionClient
+// Define a client to send goal requests to the move_base server through a SimpleActionClient
 typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
 
-int main(int argc, char** argv){
-  ros::init(argc, argv, "pick_objects");
-  
-  ros::NodeHandle n;
-  ros::Publisher robot_state_pub = n.advertise<std_msgs::Int8>("robot_state_pub", 1000);
-  
-  // Define robot state position and publish initial state
-  std_msgs::Int8 robot_state; // 0:Initial_State 1:Pickup 2:Drop_Off 3:End_State
-  state = 0;
-  robot_state.data = state;
-  robot_state_pub.publish(robot_state);  
-
-  //tell the action client that we want to spin a thread by default
-  MoveBaseClient ac("move_base", true);
-
-  // Wait 5 sec for move_base action server to come up
-  while(!ac.waitForServer(ros::Duration(5.0))){
-    ROS_INFO("Waiting for the move_base action server to come up");
-  }
-
+void send_goal(MoveBaseClient &ac, double x, double y, double w)
+{
   move_base_msgs::MoveBaseGoal goal;
 
-  
-  for (int i=0; i<2; i++) {
+  // Set up frame and stamp parameters
+  goal.target_pose.header.frame_id = "map";
+  goal.target_pose.header.stamp = ros::Time::now();
 
-    // set up the frame parameters
-    goal.target_pose.header.frame_id = "robot_footprint";
-    goal.target_pose.header.stamp = ros::Time::now();
-  
-    // Define a position and orientation for the robot to reach
-    if (i == 0) {
-      goal.target_pose.pose.position.x = 1.0;
-      goal.target_pose.pose.orientation.w = 1.0;
-    } else {
-      goal.target_pose.pose.position.x = -1.0;
-      goal.target_pose.pose.orientation.w = 1.0;
-    }
+  // Define a position and orientation for the robot to reach
+  goal.target_pose.pose.position.x = x;
+  goal.target_pose.pose.position.y = y;
+  goal.target_pose.pose.orientation.w = w;
 
-    // Send the goal position and orientation for the robot to reach
-      
-    ros::Duration(1, 0).sleep();
-    ROS_INFO("Sending goal %d", i);
-    ac.sendGoal(goal);
-  
-    // Wait an infinite time for the results
-    ac.waitForResult();
-  
-    // Check if the robot reached its goal
-    if(ac.getState() == actionlib::SimpleClientGoalState::SUCCEEDED) {
-      ROS_INFO("Hooray, robot reached the goal %d!", i);
-      if (i == 0) { state = 1; }
-      else { state = 2; }
-    } else {
-      ROS_INFO("The robot failed to navigate to goal %d", i);
-      state = 3;
-    }
+  // Send the goal position and orientation for the robot to reach
+  ac.sendGoal(goal);
+
+  // Wait an infinite time for the results
+  ac.waitForResult();
+
+  // Check if the robot reached its goal
+  if(ac.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+    ROS_INFO("Goal reached!");
+  else
+    ROS_INFO("Failed to reach goal for some reason.");
+}
+
+void publish_state(ros::Publisher &robot_state_pub, int state) {
+    std_msgs::Int8 robot_state; // 0:Initial_State 1:Pickup 2:Drop_Off 3:End_State
     robot_state.data = state;
     robot_state_pub.publish(robot_state);
+    ROS_INFO("Robot state %d published", state);
+}
 
-    ros::Duration(1, 0).sleep();
+int main(int argc, char** argv){
+
+    // Define pick-up & drop-off locations
+    double pickup_point[2]  = {1.0, 0.0};
+    double dropoff_point[2] = {-1.0, -1.0};
+    
+    // Initialize the pick_objects node
+    ros::init(argc, argv, "pick_objects");
+    ros::NodeHandle n;
+    ros::Publisher robot_state_pub = n.advertise<std_msgs::Int8>("robot_state", 1000);
+    ROS_INFO("Initializing navigation"); 
   
-  }
-  
-  return 0;
+    // Define robot state position and publish initial state
+    
+    int state = 0;
+    publish_state(robot_state_pub, state);
+
+    // Tell the action client that we want to spin a thread by default
+    MoveBaseClient ac("move_base", true);
+
+    // Wait 5 secs for the action server to come up
+    while(!ac.waitForServer(ros::Duration(5.0))) {
+        ROS_INFO("Waiting for the move_base action server to come up");
+    }
+
+    // Send the goal position and orientation for the robot to reach 
+    ROS_INFO("Sending pickup goal");   
+    send_goal(ac, pickup_point[0], pickup_point[1], 1.0);
+    publish_state(robot_state_pub, 1);
+    
+    // Simulate the picking up
+    ros::Duration(5).sleep(); 
+    
+    // Send the goal position and orientation for the robot to reach 
+    ROS_INFO("Sending dropoff goal");
+    send_goal(ac, dropoff_point[0], dropoff_point[1], 1.0);
+    publish_state(robot_state_pub, 2);
+
+    return 0;
 }

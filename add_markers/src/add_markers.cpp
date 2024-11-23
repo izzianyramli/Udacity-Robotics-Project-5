@@ -10,7 +10,7 @@ void robot_state_callback(const std_msgs::Int8 &msg) {
 }
 
 int main(int argc, char** argv) {
-    ros::init(argc, argv, "add_markers");
+    ros::init(argc, argv, "add_markers_time");
     ros::NodeHandle n;
     ros::Rate r(1);
     ros::Publisher marker_pub = n.advertise<visualization_msgs::Marker>("visualization_marker", 1);
@@ -38,65 +38,72 @@ int main(int argc, char** argv) {
         // Set the marker type
         marker.type = shape;
 
-        for (int i=0; i<2; i++) {
-            // Set the frame ID and timestamp
-            marker.header.frame_id = "map";
-            marker.header.stamp = ros::Time::now();
-            // Set the marker action
-            marker.action = visualization_msgs::Marker::ADD;
             
-            // Set the pose of the marker the goal pose
-            if ( i == 0) {
-                marker.pose.position.x = 1.0;
-                marker.pose.position.y = 0;
-                marker.pose.position.z = 0;
-                marker.pose.orientation.x = 0.0;
-                marker.pose.orientation.y = 0.0;
-                marker.pose.orientation.z = 0.0;
-                marker.pose.orientation.w = 1.0;
-            } else {
-                marker.pose.position.x = -1.0;
-                marker.pose.position.y = 0;
-                marker.pose.position.z = 0;
-                marker.pose.orientation.x = 0.0;
-                marker.pose.orientation.y = 0.0;
-                marker.pose.orientation.z = 0.0;
-                marker.pose.orientation.w = 1.0;
-            }
+        // Set the pose of the marker the goal pose
+        // Set the frame ID and timestamp
+        marker.header.frame_id = "map";
+        marker.header.stamp = ros::Time::now();
+        // Set the marker action
+        marker.action = visualization_msgs::Marker::ADD;
+        marker.pose.position.x = 1.0;
+        marker.pose.position.y = 0.0;
+        marker.pose.position.z = 0;
+        marker.pose.orientation.x = 0.0;
+        marker.pose.orientation.y = 0.0;
+        marker.pose.orientation.z = 0.0;
+        marker.pose.orientation.w = 1.0;
         
-            // Publish the marker
-            while (marker_pub.getNumSubscribers() < 1) {
-                if (!ros::ok()) {
-                    return 0;
-                }
-                ROS_WARN_ONCE("Please create a subscriber to the marker");
-                ros::Duration(0.5,0).sleep();
-            }        
-            marker_pub.publish(marker);
-            ROS_INFO("Marker published");
-
-            while (robot_state == 0) {
-                ROS_INFO("Waiting for robot to reach the pickup point...");
-                ros::Duration(0.5,0).sleep();
+        // Publish the marker
+        while (marker_pub.getNumSubscribers() < 1) {
+            if (!ros::ok()) {
+                return 0;
             }
+            ROS_WARN_ONCE("Please create a subscriber to the marker");
+            ros::Duration(0.5).sleep();
+        }
             
-            if (robot_state == 1) {
-                ROS_INFO("Robot reached the pickup point");
-                ros::Duration(0.5,0).sleep();
-                marker.action = visualization_msgs::Marker::DELETE;
-                marker_pub.publish(marker);
-                ROS_INFO("Marker picked up by robot");
-            } else if (robot_state == 2) {
-                ROS_INFO("Robot reached the dropoff point");
-                ros::Duration(0.5,0).sleep();
-                marker.action = visualization_msgs::Marker::ADD;
-                marker_pub.publish(marker);
-                ROS_INFO("Marker dropped off by robot");
-            }
+        if (robot_state == 0) {
+            marker_pub.publish(marker);
+            ROS_INFO("Marker at pickup point");
+        }
+        
+        while ( robot_state != 1) {
+            ROS_INFO("Wait for robot to reach pickup point");
+            ros::Duration(0.5).sleep();
+            ros::spinOnce();
+        }
+        
+        if (robot_state == 1) {
+            ROS_INFO("Robot reached the pickup point");
+            ros::Duration(0.5).sleep();
+            marker.action = visualization_msgs::Marker::DELETE;
+            marker_pub.publish(marker);
+            ROS_INFO("Marker picked up by robot");
+        }
+        
+        while ( robot_state != 2) {
+            ROS_INFO("Wait for robot to reach dropoff point");
+            ros::Duration(0.5).sleep();
+            ros::spinOnce();
+        }
 
+        if (robot_state == 2){
+            ROS_INFO("Robot reached the dropoff point");
+            ros::Duration(0.5).sleep();
+            marker.pose.position.x = -1.0;
+            marker.pose.position.y = -1.0;
+            marker.pose.position.z = 0;
+            marker.pose.orientation.x = 0.0;
+            marker.pose.orientation.y = 0.0;
+            marker.pose.orientation.z = 0.0;
+            marker.pose.orientation.w = 1.0;
+            marker.action = visualization_msgs::Marker::ADD;
+            marker_pub.publish(marker);
+            ros::Duration(5).sleep();
+            ROS_INFO("Marker dropped off by robot");
+        }
         ros::spin();
         r.sleep();
-        }
     }
     return 0;
 }

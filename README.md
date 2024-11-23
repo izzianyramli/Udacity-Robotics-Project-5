@@ -35,7 +35,7 @@ You may need to change the param based on your simulation environment in `slam_g
 ```
 
 3. `teleop_twist_keyboard`: This package contains robot teleoperation package that is used to manually control the robot using keyboard for testing, especially while doing mapping. 
-4. `add_markers`: Package for adding markers in RViz to be used in home service robot application.
+4. `add_markers`: Package for adding cube markers in RViz to be used in home service robot application, to visualize object being picked up and dropped off by the robot.
 5. `pick-objects`: Package for adding multiple navigation goal for the home service robot application.
 
 ## 1. Clone and Build
